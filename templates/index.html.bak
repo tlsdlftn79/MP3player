@@ -1,0 +1,47 @@
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MP3 재생</title>
+</head>
+<body>
+    <h1>MP3 재생</h1>
+
+    <!-- MP3 파일 업로드 폼 -->
+    <form action="/upload_mp3/" method="post" enctype="multipart/form-data">
+        <input type="file" name="mp3">
+        <input type="submit" value="Upload">
+    </form>
+
+    <ul id="mp3List">
+        {% for mp3 in mp3_list %}
+        <li>
+            <a href="#" onclick="playAudio('{{ url_for('static', path='mp3/' + mp3) }}', {{ loop.index0 }})">{{ mp3 }}</a>
+        </li>
+        {% endfor %}
+    </ul>
+
+    <audio id="audioPlayer" controls>
+        Your browser does not support the audio element.
+    </audio>
+
+    <script>
+        var mp3List = Array.from(document.getElementById('mp3List').children);
+        var currentIndex = 0;
+
+        function playAudio(url, index) {
+            const audioPlayer = document.getElementById('audioPlayer');
+            audioPlayer.src = url;
+            audioPlayer.play();
+            currentIndex = index;
+        }
+
+        document.getElementById('audioPlayer').addEventListener('ended', function () {
+            currentIndex = (currentIndex + 1) % mp3List.length;
+            var nextMp3 = mp3List[currentIndex].children[0];
+            nextMp3.click();
+        });
+    </script>
+</body>
+</html>
