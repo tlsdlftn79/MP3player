@@ -4,6 +4,13 @@
 <head>
     <meta charset="UTF-8">
     <title>MP3 재생</title>
+    <style>
+        #mp3List li {
+            border: 1px solid #000;
+            margin: 5px;
+            padding: 5px;
+        }
+    </style>
 </head>
 <body>
     <h1>MP3 재생</h1>
@@ -14,12 +21,12 @@
         <input type="submit" value="업로드">
     </form>
 
+    <p>
+    <button onclick="changePage(-1)">이전 페이지</button>
+    <button onclick="changePage(1)">다음 페이지</button>
+    </p>
+
     <ul id="mp3List">
-        {% for mp3 in mp3_list %}
-        <li>
-            <a href="#" onclick="playAudio('{{ url_for('static', path='mp3/' + mp3) }}', {{ loop.index0 }})">{{ mp3 }}</a>
-        </li>
-        {% endfor %}
     </ul>
 
     <audio id="audioPlayer" controls>
@@ -27,21 +34,52 @@
     </audio>
 
     <script>
-        var mp3List = Array.from(document.getElementById('mp3List').children);
-        var currentIndex = 0;
+        var mp3List = {{ mp3_list | tojson }};
+        var currentPage = 0;
+        var itemsPerPage = 10;
+        var audioPlayer = document.getElementById('audioPlayer');
+        var currentTrack = 0;
 
         function playAudio(url, index) {
-            const audioPlayer = document.getElementById('audioPlayer');
             audioPlayer.src = url;
             audioPlayer.play();
-            currentIndex = index;
+            currentTrack = index;
         }
 
-        document.getElementById('audioPlayer').addEventListener('ended', function () {
-            currentIndex = (currentIndex + 1) % mp3List.length;
-            var nextMp3 = mp3List[currentIndex].children[0];
-            nextMp3.click();
+        function changePage(direction) {
+            currentPage += direction;
+            renderList();
+        }
+
+        function renderList() {
+            var start = currentPage * itemsPerPage;
+            var end = start + itemsPerPage;
+            var pageItems = mp3List.slice(start, end);
+
+            var listElement = document.getElementById('mp3List');
+            listElement.innerHTML = '';
+            for (var i = 0; i < pageItems.length; i++) {
+                var listItem = document.createElement('li');
+                var link = document.createElement('a');
+                link.href = '#';
+                link.onclick = function(pageItem, i) { 
+                    return function() { 
+                        playAudio('{{ url_for('static', path='mp3/') }}' + pageItem, start + i); 
+                    }
+                }(pageItems[i], i);
+                link.textContent = pageItems[i].slice(0, -4);  // 확장명 제거
+                listItem.appendChild(link);
+                listElement.appendChild(listItem);
+            }
+        }
+
+        audioPlayer.addEventListener('ended', function () {
+            currentTrack = (currentTrack + 1) % mp3List.length;
+            var nextUrl = '{{ url_for('static', path='mp3/') }}' + mp3List[currentTrack];
+            playAudio(nextUrl, currentTrack);
         });
+
+        renderList();
     </script>
 </body>
 </html>
